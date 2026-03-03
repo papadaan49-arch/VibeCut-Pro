@@ -13,6 +13,7 @@ export const useGeminiLive = ({ apiKey, systemInstruction, onTranscript }: UseGe
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volume, setVolume] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const inputContextRef = useRef<AudioContext | null>(null);
   const outputContextRef = useRef<AudioContext | null>(null);
@@ -45,14 +46,20 @@ export const useGeminiLive = ({ apiKey, systemInstruction, onTranscript }: UseGe
       });
 
       // Get Mic & Camera
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true,
-        video: true 
-      });
-      streamRef.current = stream;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: true,
+          video: true 
+        });
+        streamRef.current = stream;
 
-      if (videoElement) {
-        videoElement.srcObject = stream;
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Permission denied or device not found", err);
+        setError("Camera/Microphone permission denied. Please allow access to continue.");
+        return;
       }
 
       const sessionPromise = ai.live.connect({
@@ -202,5 +209,5 @@ export const useGeminiLive = ({ apiKey, systemInstruction, onTranscript }: UseGe
 
   useEffect(() => { return () => cleanup(); }, [cleanup]);
 
-  return { isConnected, isSpeaking, volume, connect, disconnect };
+  return { isConnected, isSpeaking, volume, connect, disconnect, error };
 };

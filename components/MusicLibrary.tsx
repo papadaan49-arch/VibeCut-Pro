@@ -11,15 +11,35 @@ interface MusicLibraryProps {
 const MOCK_TRENDING: MusicTrack[] = [
   { id: '1', title: 'Better Together', artist: 'Jack Johnson', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop', duration: 208 },
   { id: '2', title: 'Summer Vibe', artist: 'Tropical House', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', thumbnail: 'https://images.unsplash.com/photo-1526218626217-dc65a29bb444?w=100&h=100&fit=crop', duration: 185 },
-  { id: '3', title: 'Work Hard Play Hard', artist: 'Wiz Khalifa', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', thumbnail: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=100&h=100&fit=crop', duration: 230 },
-  { id: '4', title: 'Team Spirit', artist: 'Victory Collective', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=100&h=100&fit=crop', duration: 195 },
+];
+
+const YOUTUBE_FREE: MusicTrack[] = [
+  { id: 'yt-1', title: 'Cinematic Ambient', artist: 'YouTube Audio Library', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop', duration: 180 },
+  { id: 'yt-2', title: 'Upbeat Corporate', artist: 'YouTube Audio Library', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', thumbnail: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=100&h=100&fit=crop', duration: 150 },
+  { id: 'yt-3', title: 'Dramatic Trailer', artist: 'YouTube Audio Library', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', thumbnail: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=100&h=100&fit=crop', duration: 210 },
+];
+
+const XIAOMI_RINGTONES: MusicTrack[] = [
+  { id: 'mi-1', title: 'Mi Remix', artist: 'Xiaomi Dex', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3', thumbnail: 'https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=100&h=100&fit=crop', duration: 30 },
+  { id: 'mi-2', title: 'Mi Jazz', artist: 'Xiaomi Dex', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', thumbnail: 'https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=100&h=100&fit=crop', duration: 45 },
+  { id: 'mi-3', title: 'Mi Electronic', artist: 'Xiaomi Dex', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', thumbnail: 'https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=100&h=100&fit=crop', duration: 35 },
 ];
 
 export const MusicLibrary: React.FC<MusicLibraryProps> = ({ onSelect, onClose }) => {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'trending' | 'discovery' | 'recent'>('trending');
+  const [activeTab, setActiveTab] = useState<'trending' | 'youtube' | 'xiaomi' | 'discovery'>('trending');
   const [aiResults, setAiResults] = useState<MusicTrack[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const getTracks = () => {
+    switch (activeTab) {
+      case 'trending': return MOCK_TRENDING;
+      case 'youtube': return YOUTUBE_FREE;
+      case 'xiaomi': return XIAOMI_RINGTONES;
+      case 'discovery': return aiResults;
+      default: return [];
+    }
+  };
 
   const handleAISearch = async () => {
     if (!search.trim()) return;
@@ -100,13 +120,13 @@ export const MusicLibrary: React.FC<MusicLibraryProps> = ({ onSelect, onClose })
         </div>
 
         <div className="flex gap-6 overflow-x-auto pb-2 no-scrollbar">
-          {(['trending', 'discovery', 'recent'] as const).map(tab => (
+          {(['trending', 'youtube', 'xiaomi', 'discovery'] as const).map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`text-[10px] font-black uppercase tracking-[0.2em] pb-2 border-b-2 transition-all shrink-0 ${activeTab === tab ? 'text-white border-white' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
             >
-              {tab === 'discovery' ? 'AI Discovery' : tab}
+              {tab === 'youtube' ? 'YT Free' : tab === 'xiaomi' ? 'Mi Dex' : tab === 'discovery' ? 'AI Discovery' : tab}
             </button>
           ))}
         </div>
@@ -130,7 +150,7 @@ export const MusicLibrary: React.FC<MusicLibraryProps> = ({ onSelect, onClose })
           </div>
         )}
 
-        {((activeTab === 'trending' ? MOCK_TRENDING : aiResults)).map((track) => (
+        {getTracks().map((track) => (
           <div 
             key={track.id} 
             onClick={() => onSelect(track)}

@@ -32,3 +32,17 @@ export interface ExportSettings {
   resolution: '720p' | '1080p' | '4K';
   format: 'mp4' | 'mov' | 'webm';
 }
+
+export interface AIEditSuggestion {
+  id: string;
+  type: 'cut' | 'scene' | 'style';
+  description: string;
+  timestamp?: number;
+  duration?: number;
+  confidence: number;
+}
+
+export interface GeneratedVideo {
+  uri: string;
+  mimeType: string;
+}

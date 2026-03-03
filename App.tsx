@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Gallery } from './components/Gallery';
 import { LiveInterface } from './components/LiveInterface';
+import { LocalSync } from './components/LocalSync';
 import { MediaAsset, LogMessage } from './types';
 import { useGeminiLive } from './hooks/useGeminiLive';
 import { virtualServer } from './services/storageService';
@@ -25,6 +26,7 @@ function App() {
   const [future, setFuture] = useState<MediaAsset[][]>([]);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [activeTab, setActiveTab] = useState<'gallery' | 'assistant'>('gallery');
+  const [showSync, setShowSync] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isKeySelected, setIsKeySelected] = useState<boolean | null>(null);
   
@@ -115,7 +117,13 @@ function App() {
     setLogs(prev => [...prev, { timestamp: new Date(), sender, text }]);
   }, []);
 
-  const { isConnected, isSpeaking, volume, connect, disconnect } = useGeminiLive({
+  const handleReceiveAsset = useCallback((asset: MediaAsset) => {
+    setAssets(prev => [...prev, asset]);
+    // Note: History recording is skipped here for simplicity to avoid closure staleness issues
+    // In a production app, we'd use a reducer or ref to handle history updates correctly
+  }, []);
+
+  const { isConnected, isSpeaking, volume, connect, disconnect, error: liveError } = useGeminiLive({
     apiKey,
     systemInstruction: `Anda adalah 'VibeCut Pro Director', editor ahli dengan rasa estetika tinggi. 
     Anda bekerja dalam ekosistem Google Cloud gratis (0 rupiah).
@@ -135,18 +143,32 @@ function App() {
   const handleAddAssets = async (files: FileList) => {
     setIsSyncing(true);
     const newAssetsToRecord: MediaAsset[] = [...assets];
+    let hasNonVideo = false;
+
     for (const file of Array.from(files)) {
+      if (!file.type.startsWith('video/')) {
+        hasNonVideo = true;
+        continue;
+      }
+      
       const id = Math.random().toString(36).substr(2, 9);
       await virtualServer.saveAsset({ id, name: file.name, type: file.type, data: file });
       newAssetsToRecord.push({
         id,
         file,
         previewUrl: URL.createObjectURL(file),
-        type: file.type.startsWith('video/') ? 'video' : 'image',
+        type: 'video',
         name: file.name
       });
     }
-    recordHistory(newAssetsToRecord);
+
+    if (hasNonVideo) {
+      alert("Only video files are supported. Photos and images were skipped.");
+    }
+
+    if (newAssetsToRecord.length > assets.length) {
+      recordHistory(newAssetsToRecord);
+    }
     setIsSyncing(false);
   };
 
@@ -233,6 +255,14 @@ function App() {
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                {isConnected && <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-4 border-zinc-950"></div>}
             </button>
+
+            <button 
+              onClick={() => setShowSync(!showSync)} 
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${showSync ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/40' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900'}`}
+              title="Local Sync / Safe House"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
         </div>
       </div>
 
@@ -241,6 +271,7 @@ function App() {
             <Gallery 
               assets={assets} 
               onAddAssets={handleAddAssets} 
+              onAddAsset={handleReceiveAsset}
               onRemoveAsset={handleRemoveAsset}
               onReorderAssets={handleReorderAssets}
               onUndo={handleUndo}
@@ -257,9 +288,24 @@ function App() {
               volume={volume} 
               connect={connect} 
               disconnect={disconnect} 
+              error={liveError}
             />
         </div>
       </div>
+
+      {showSync && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="relative w-full max-w-md">
+                <button 
+                    onClick={() => setShowSync(false)}
+                    className="absolute -top-12 right-0 text-zinc-400 hover:text-white"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <LocalSync onReceiveAsset={handleReceiveAsset} />
+            </div>
+        </div>
+      )}
 
       {/* Mobile Navigation Footer */}
       <div className="md:hidden h-24 border-t border-zinc-900 bg-zinc-950/95 backdrop-blur-3xl flex items-center px-6 shrink-0 z-[100] pb-safe">

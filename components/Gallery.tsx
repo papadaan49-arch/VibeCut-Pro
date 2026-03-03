@@ -4,6 +4,7 @@ import { MediaAsset, MusicTrack } from '../types';
 import { ExportModal } from './ExportModal';
 import { MusicVisualizer } from './MusicVisualizer';
 import { MusicLibrary } from './MusicLibrary';
+import { AIEditTools } from './AIEditTools';
 
 interface VideoPlayerProps {
   src: string;
@@ -106,6 +107,7 @@ const getVibeTip = (asset: MediaAsset): string => {
 interface GalleryProps {
   assets: MediaAsset[];
   onAddAssets: (files: FileList) => void;
+  onAddAsset: (asset: MediaAsset) => void;
   onRemoveAsset: (id: string) => void;
   onReorderAssets?: (startIndex: number, endIndex: number) => void;
   onUndo?: () => void;
@@ -117,6 +119,7 @@ interface GalleryProps {
 export const Gallery: React.FC<GalleryProps> = ({ 
   assets, 
   onAddAssets, 
+  onAddAsset,
   onRemoveAsset,
   onReorderAssets,
   onUndo,
@@ -129,6 +132,7 @@ export const Gallery: React.FC<GalleryProps> = ({
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isMusicLibraryOpen, setIsMusicLibraryOpen] = useState(false);
+  const [isAIEditToolsOpen, setIsAIEditToolsOpen] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
@@ -187,6 +191,14 @@ export const Gallery: React.FC<GalleryProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden relative w-full bg-zinc-950">
       <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} assets={assets} />
       {isMusicLibraryOpen && <MusicLibrary onSelect={handleSelectMusic} onClose={() => setIsMusicLibraryOpen(false)} />}
+      {isAIEditToolsOpen && (
+        <AIEditTools 
+          assets={assets} 
+          onAddAsset={onAddAsset} 
+          onApplyEdit={(suggestion) => console.log('Applied edit:', suggestion)} 
+          onClose={() => setIsAIEditToolsOpen(false)} 
+        />
+      )}
       
       {selectedMusic && <audio ref={audioRef} src={selectedMusic.url} loop onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />}
 
@@ -273,6 +285,14 @@ export const Gallery: React.FC<GalleryProps> = ({
             </div>
 
             <button 
+              onClick={() => setIsAIEditToolsOpen(true)}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 uppercase tracking-widest active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 2a10 10 0 0 1 10 10h-10V2z"></path><path d="M12 12L2.5 7.5"></path><path d="M12 12l4.5 9.5"></path></svg>
+              AI Tools
+            </button>
+
+            <button 
               onClick={startCinematicPreview}
               disabled={assets.length === 0}
               className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 uppercase tracking-widest active:scale-95"
@@ -286,7 +306,7 @@ export const Gallery: React.FC<GalleryProps> = ({
               UPLOAD
             </button>
           </div>
-          <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
+          <input type="file" multiple ref={fileInputRef} className="hidden" accept="video/*" onChange={handleFileChange} />
         </div>
 
         <div className="flex items-center gap-4 pt-2 border-t border-zinc-800/50 flex-wrap">
@@ -340,8 +360,8 @@ export const Gallery: React.FC<GalleryProps> = ({
             <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </div>
-            <p className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Belum ada footage tim</p>
-            <p className="text-[10px] mt-2 opacity-60">Upload video atau foto keseruan acaramu di sini.</p>
+            <p className="font-bold text-zinc-400 uppercase tracking-widest text-xs">Belum ada footage video</p>
+            <p className="text-[10px] mt-2 opacity-60">Upload video keseruan acaramu di sini (No Photos).</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
